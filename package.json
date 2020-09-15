@@ -1,0 +1,35 @@
+{
+  "name": "AKLL-Match-Service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "service": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Akzuu/AKLL-Match-Service.git"
+  },
+  "keywords": [],
+  "author": "Akseli Kolari TG:@akzu404",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Akzuu/AKLL-Match-Service/issues"
+  },
+  "homepage": "https://github.com/Akzuu/AKLL-Match-Service#readme",
+  "devDependencies": {
+    "eslint": "^7.9.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0"
+  },
+  "dependencies": {
+    "config": "^3.3.1",
+    "fastify": "^3.4.1",
+    "fastify-helmet": "^5.0.2",
+    "fastify-swagger": "^3.3.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.10.5",
+    "winston": "^3.3.3"
+  }
+}
