@@ -9,6 +9,9 @@ const schema = new Schema({
     unique: true,
     sparse: true,
   },
+  challongeRound: {
+    type: Number,
+  },
   teamOne: {
     id: {
       type: ObjectId,
