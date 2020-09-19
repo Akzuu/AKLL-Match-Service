@@ -1,5 +1,5 @@
 const utility = require('./utility');
-const match = require('./timeslot');
+const match = require('./match');
 const timeslot = require('./timeslot');
 
 module.exports = {

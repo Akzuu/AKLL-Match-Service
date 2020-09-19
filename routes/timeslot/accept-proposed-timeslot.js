@@ -17,15 +17,7 @@ const schema = {
       challongeMatchId: {
         type: 'string',
       },
-      proposedTimeslots: {
-        type: 'array',
-        items: {
-          $ref: '#/definitions/timeslot',
-        },
-      },
-    },
-    definitions: {
-      timeslot: {
+      acceptedTimeslot: {
         type: 'object',
         properties: {
           startTime: {
@@ -40,7 +32,7 @@ const schema = {
       },
     },
   },
-  /* response: {
+  response: {
     200: {
       type: 'object',
       properties: {
@@ -49,17 +41,16 @@ const schema = {
         },
       },
     },
-  }, */
+  },
 };
 
 const handler = async (req, reply) => {
-  if (!req.body.challongeMatchId || req.body.proposedTimeslots.length < 1) {
+  if (!req.body.challongeMatchId || !req.body.acceptedTimeslot) {
     log.error('Not enough parameters! ');
     reply.status(400).send({
       status: 'ERROR',
       error: 'Bad Request',
     });
-    return;
   }
 
   let authPayload;
@@ -109,15 +100,30 @@ const handler = async (req, reply) => {
     reply.status(401).send({
       status: 'ERROR',
       error: 'Unauthorized',
-      message: 'Only captains can propose timeslots!',
+      message: 'Only captains can accept timeslots!',
     });
     return;
   }
 
-  const proposedTimeslots = req.body.proposedTimeslots
-    .map((timeslot) => ({ ...timeslot, proposerId: authPayload._id }));
-  match.proposedTimeslots.push(proposedTimeslots);
+  if (!match.proposedTimeslots.includes({
+    proposerId: authPayload._id,
+    startTime: req.body.acceptedTimeslot.startTime,
+    endTime: req.body.acceptedTimeslot.endTime,
+  })) {
+    reply.status(404).send({
+      status: 'ERROR',
+      error: 'Not Found',
+      message: 'Timeslot not found!',
+    });
+    return;
+  }
+
+  match.acceptedTimeslot = {
+    startTime: req.body.acceptedTimeslot.startTime,
+    endTime: req.body.acceptedTimeslot.endTime,
+  };
   await match.save();
+
   reply.send({
     status: 'OK',
   });
@@ -126,7 +132,7 @@ const handler = async (req, reply) => {
 module.exports = async function (fastify) {
   fastify.route({
     method: 'POST',
-    url: '/propose-timeslot',
+    url: '/accept-proposed-timeslot',
     handler,
     schema,
   });

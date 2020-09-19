@@ -60,6 +60,7 @@ const schema = new Schema({
   },
   matchPlayed: {
     type: Boolean,
+    default: false,
   },
   endScore: {
     winner: {
@@ -111,7 +112,7 @@ const schema = new Schema({
     },
     tournamentCodes: {
       type: [String],
-    }
+    },
   },
 }, {
   timestamps: true,
