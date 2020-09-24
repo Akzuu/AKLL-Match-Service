@@ -42,7 +42,11 @@ const handler = async (req, reply) => {
 
   let match;
   try {
-    match = await Match.findById(matchId);
+    match = await Match.findOne({
+      _id: matchId,
+      matchDateLocked: false,
+      matchPlayed: false,
+    });
   } catch (error) {
     log.error('Error finding the match! ', error);
     reply.status(500).send({
@@ -56,7 +60,7 @@ const handler = async (req, reply) => {
     reply.status(404).send({
       status: 'ERROR',
       error: 'Not Found',
-      message: 'Match not found! Make sure matchId is valid!',
+      message: 'Match not found! Maybe match already has a timeslot or the id is invalid?',
     });
     return;
   }
