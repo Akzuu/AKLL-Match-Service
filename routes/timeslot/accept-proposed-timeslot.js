@@ -123,6 +123,7 @@ const handler = async (req, reply) => {
       $set: {
         acceptedTimeslot: acceptedTimeslotId,
         proposedTimeslots: [],
+        matchDateLocked: true,
       },
     });
   } catch (error) {

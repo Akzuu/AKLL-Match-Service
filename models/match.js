@@ -48,6 +48,10 @@ const schema = new Schema({
     type: ObjectId,
     ref: 'timeslots',
   },
+  matchDateLocked: {
+    type: Boolean,
+    default: false,
+  },
   matchDeadline: {
     type: Date,
   },
