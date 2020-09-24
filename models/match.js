@@ -31,7 +31,13 @@ const schema = new Schema({
   game: {
     type: String,
   },
-  suggestedTimeslots: [{
+  bestOf: {
+    type: Number,
+  },
+  proposedTimeslots: [{
+    proposerId: {
+      type: ObjectId,
+    },
     startTime: {
       type: Date,
       required: true,
@@ -54,6 +60,7 @@ const schema = new Schema({
   },
   matchPlayed: {
     type: Boolean,
+    default: false,
   },
   endScore: {
     winner: {
@@ -100,7 +107,12 @@ const schema = new Schema({
     }],
   },
   lol: {
-    // Something???
+    statServiceGameIds: {
+      type: [ObjectId],
+    },
+    tournamentCodes: {
+      type: [String],
+    },
   },
 }, {
   timestamps: true,
