@@ -9,9 +9,11 @@ const schema = new Schema({
   },
   ip: {
     type: String,
+    required: true,
   },
   port: {
     type: Number,
+    required: true,
   },
   password: {
     type: String,
@@ -19,6 +21,7 @@ const schema = new Schema({
   league: {
     type: String,
     enum: ['all', 'pro', 'division'],
+    default: 'all',
   },
 }, {
   timestamps: true,

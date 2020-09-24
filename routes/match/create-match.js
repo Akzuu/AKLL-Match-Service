@@ -1,4 +1,3 @@
-const JWT = require('jsonwebtoken');
 const { log } = require('../../lib');
 const { Match } = require('../../models');
 
@@ -64,19 +63,19 @@ const schema = {
 const handler = async (req, reply) => {
   let authPayload;
 
-  // Check auth headers
-  if (req.headers.authorization) {
-    try {
-      authPayload = await JWT.verify(req.headers.authorization);
-    } catch (error) {
-      reply.status(401).send({
-        status: 'ERROR',
-        error: 'Unauthorized',
-        message: 'Please authenticate',
-      });
-      return;
-    }
-  }
+  // // Check auth headers
+  // if (req.headers.authorization) {
+  //   try {
+  //     authPayload = await JWT.verify(req.headers.authorization);
+  //   } catch (error) {
+  //     reply.status(401).send({
+  //       status: 'ERROR',
+  //       error: 'Unauthorized',
+  //       message: 'Please authenticate',
+  //     });
+  //     return;
+  //   }
+  // }
 
   if (!authPayload.roles.includes('admin')) {
     reply.status(403).send({
@@ -98,8 +97,11 @@ const handler = async (req, reply) => {
     return;
   }
 
+  const { accessToken = {}, refreshToken = {} } = req.auth;
   reply.send({
     status: 'OK',
+    accessToken,
+    refreshToken,
   });
 };
 
@@ -108,6 +110,7 @@ module.exports = async function (fastify) {
     method: 'POST',
     url: '/create-match',
     handler,
+    preValidation: fastify.auth([fastify.verifyJWT]),
     schema,
   });
 };

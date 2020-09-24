@@ -3,7 +3,10 @@ const config = require('config');
 const fastify = require('fastify');
 const fastifySwagger = require('fastify-swagger');
 const fastifyHelmet = require('fastify-helmet');
+const fastifyAuth = require('fastify-auth');
 const routes = require('./routes');
+
+const { auth } = require('./lib');
 
 const APPLICATION_PORT = config.get('port');
 const ROUTE_PREFIX = config.get('routePrefix');
@@ -35,20 +38,16 @@ const initSwagger = () => {
       }],
       consumes: ['application/json'],
       produces: ['application/json'],
-      tags: [
-        {
-          name: '...',
-          description: '...',
-        }, {
-          name: 'Match',
-          description: 'Manage tournament matches',
-        }, {
-          name: 'Calendar timeslots',
-          description: 'Manage match timeslots',
-        }, {
-          name: 'Utility',
-          description: 'Utility endpoints',
-        },
+      tags: [{
+        name: 'Match',
+        description: 'Manage tournament matches',
+      }, {
+        name: 'Timeslot',
+        description: 'Manage match timeslots',
+      }, {
+        name: 'Utility',
+        description: 'Utility endpoints',
+      },
       ],
     },
     exposeRoute: true,
@@ -91,6 +90,7 @@ const initServer = async () => {
 
   // Register plugins and routes
   server
+    .decorate('verifyJWT', auth.verifyJWT)
     .register(fastifySwagger, initSwagger())
     .register(fastifyHelmet, {
       contentSecurityPolicy: {
@@ -102,6 +102,7 @@ const initServer = async () => {
         },
       },
     })
+    .register(fastifyAuth)
     .register(timeslotRoute, { prefix: `${ROUTE_PREFIX}/timeslot` })
     .register(matchRoute, { prefix: `${ROUTE_PREFIX}/match` })
     .register(utilityRoute, { prefix: `${ROUTE_PREFIX}/utility` });

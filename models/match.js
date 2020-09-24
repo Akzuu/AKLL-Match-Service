@@ -13,47 +13,40 @@ const schema = new Schema({
     type: Number,
   },
   teamOne: {
-    id: {
+    coreId: {
       type: ObjectId,
+      required: true,
     },
     name: {
       type: String,
+      required: true,
     },
   },
   teamTwo: {
-    id: {
+    coreId: {
       type: ObjectId,
+      required: true,
     },
     name: {
       type: String,
+      required: true,
     },
   },
   game: {
     type: String,
+    required: true,
   },
   bestOf: {
     type: Number,
+    required: true,
   },
   proposedTimeslots: [{
-    proposerId: {
-      type: ObjectId,
-    },
-    startTime: {
-      type: Date,
-      required: true,
-    },
-    endTime: {
-      type: Date,
-      required: true,
-    },
+    type: ObjectId,
+    ref: 'timeslots',
   }],
-  lockedTimeslot: {
-    startTime: {
-      type: Date,
-    },
-    endTime: {
-      type: Date,
-    },
+  acceptedTimeslot: {
+    type: ObjectId,
+    ref: 'timeslots',
   },
   matchDeadline: {
     type: Date,
@@ -83,7 +76,7 @@ const schema = new Schema({
       type: ObjectId,
       ref: 'csgoServers',
     },
-    statServiceId: {
+    statsServiceMatchId: {
       type: ObjectId,
     },
     maps: [{

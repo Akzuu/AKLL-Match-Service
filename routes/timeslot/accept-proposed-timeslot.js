@@ -1,34 +1,26 @@
 const bent = require('bent');
-const JWT = require('jsonwebtoken');
 const config = require('config');
 const { log } = require('../../lib');
 const { Match } = require('../../models');
 
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
-const getCaptainIds = bent(`${AKLL_BACKEND_URL}/get-captains`, 'POST', 'json', 200);
+
+const getCaptainIds = bent(`${AKLL_BACKEND_URL}/get-captains`,
+  'POST', 'json', 200);
 
 const schema = {
-  description: 'Propose a timeslot for match.',
-  summary: 'Propose a timeslot.',
+  description: 'Accept proposed timeslot.',
+  summary: 'Accept a timeslot',
   tags: ['Timeslot'],
   body: {
     type: 'object',
+    required: ['matchId', 'acceptedTimeslotId'],
     properties: {
-      challongeMatchId: {
+      matchId: {
         type: 'string',
       },
-      acceptedTimeslot: {
-        type: 'object',
-        properties: {
-          startTime: {
-            type: 'string',
-            format: 'date-time',
-          },
-          endTime: {
-            type: 'string',
-            format: 'date-time',
-          },
-        },
+      acceptedTimeslotId: {
+        type: 'string',
       },
     },
   },
@@ -45,35 +37,13 @@ const schema = {
 };
 
 const handler = async (req, reply) => {
-  if (!req.body.challongeMatchId || !req.body.acceptedTimeslot) {
-    log.error('Not enough parameters! ');
-    reply.status(400).send({
-      status: 'ERROR',
-      error: 'Bad Request',
-    });
-  }
-
-  let authPayload;
-
-  // Check auth headers
-  if (req.headers.authorization) {
-    try {
-      authPayload = await JWT.verify(req.headers.authorization);
-    } catch (error) {
-      reply.status(401).send({
-        status: 'ERROR',
-        error: 'Unauthorized',
-        message: 'Please authenticate',
-      });
-      return;
-    }
-  }
+  const { matchId, acceptedTimeslotId } = req.body;
+  const authPayload = req.auth.jwtPayload;
 
   let match;
   try {
-    match = await Match.findOne({
-      challongeMatchId: req.body.challongeMatchId,
-    });
+    match = await Match.findById(matchId)
+      .populate('proposedTimeslots');
   } catch (error) {
     log.error('Error finding the match! ', error);
     reply.status(500).send({
@@ -83,7 +53,46 @@ const handler = async (req, reply) => {
     return;
   }
 
-  const teamIdArray = [match.teamOne.id, match.teamTwo.id];
+  if (!match) {
+    reply.status(404).send({
+      status: 'ERROR',
+      error: 'Not Found',
+      message: 'Match not found! Make sure matchId is valid!',
+    });
+    return;
+  }
+
+  if (match.acceptedTimeslot) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'Timeslot already accepted by both parties for this match!',
+    });
+    return;
+  }
+
+  const acceptedTimeslot = match.proposedTimeslots
+    .filter((timeslot) => String(timeslot._id) === acceptedTimeslotId);
+
+  if (acceptedTimeslot) {
+    reply.status(404).send({
+      status: 'ERROR',
+      error: 'Not Found',
+      message: 'Timeslot not found!',
+    });
+    return;
+  }
+
+  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'You can not accept timeslot proposed by yourself!',
+    });
+    return;
+  }
+
+  const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
   try {
     captains = await getCaptainIds(teamIdArray);
@@ -105,35 +114,35 @@ const handler = async (req, reply) => {
     return;
   }
 
-  if (!match.proposedTimeslots.includes({
-    proposerId: authPayload._id,
-    startTime: req.body.acceptedTimeslot.startTime,
-    endTime: req.body.acceptedTimeslot.endTime,
-  })) {
-    reply.status(404).send({
-      status: 'ERROR',
-      error: 'Not Found',
-      message: 'Timeslot not found!',
+  try {
+    await Match.findByIdAndUpdate(matchId, {
+      $set: {
+        acceptedTimeslot: acceptedTimeslotId,
+        proposedTimeslots: [],
+      },
     });
-    return;
+  } catch (error) {
+    log.error('Error when trying to update match! ', error);
+    reply.status(500).send({
+      status: 'ERROR',
+      error: 'Internal Server Error',
+    });
   }
 
-  match.acceptedTimeslot = {
-    startTime: req.body.acceptedTimeslot.startTime,
-    endTime: req.body.acceptedTimeslot.endTime,
-  };
-  await match.save();
-
+  const { accessToken = {}, refreshToken = {} } = req.auth;
   reply.send({
     status: 'OK',
+    accessToken,
+    refreshToken,
   });
 };
 
 module.exports = async function (fastify) {
   fastify.route({
     method: 'POST',
-    url: '/accept-proposed-timeslot',
+    url: '/accept',
     handler,
+    preValidation: fastify.auth([fastify.verifyJWT]),
     schema,
   });
 };
