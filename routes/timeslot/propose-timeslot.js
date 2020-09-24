@@ -5,7 +5,7 @@ const { Match, Timeslot } = require('../../models');
 
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
 
-const getCaptainIds = bent(`${AKLL_BACKEND_URL}/get-captains`, 'POST', 'json', 200);
+const getCaptainIds = bent(`${AKLL_BACKEND_URL}`, 'POST', 'json', 200);
 
 const schema = {
   description: 'Propose a timeslot for match.',
@@ -64,7 +64,9 @@ const handler = async (req, reply) => {
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
   try {
-    captains = await getCaptainIds(teamIdArray);
+    captains = await getCaptainIds('/team/get-captains', {
+      teamIdArray,
+    });
   } catch (error) {
     log.error('Error fetching captains! ', error);
     reply.status(500).send({
@@ -83,9 +85,15 @@ const handler = async (req, reply) => {
     return;
   }
 
+  const payload = {
+    proposerId: authPayload._id,
+    startTime: proposedTimeslot.startTime,
+    endTime: proposedTimeslot.endTime,
+  };
+
   let timeslot;
   try {
-    timeslot = await Timeslot.create(proposedTimeslot);
+    timeslot = await Timeslot.create(payload);
   } catch (error) {
     log.error('Error when trying to create timeslot! ', error);
     reply.status(500).send({

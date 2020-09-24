@@ -5,7 +5,7 @@ const { Match } = require('../../models');
 
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
 
-const getCaptainIds = bent(`${AKLL_BACKEND_URL}/get-captains`,
+const getCaptainIds = bent(`${AKLL_BACKEND_URL}`,
   'POST', 'json', 200);
 
 const schema = {
@@ -71,10 +71,10 @@ const handler = async (req, reply) => {
     return;
   }
 
-  const acceptedTimeslot = match.proposedTimeslots
+  const acceptedTimeslotArr = match.proposedTimeslots
     .filter((timeslot) => String(timeslot._id) === acceptedTimeslotId);
 
-  if (acceptedTimeslot) {
+  if (!acceptedTimeslotArr) {
     reply.status(404).send({
       status: 'ERROR',
       error: 'Not Found',
@@ -82,6 +82,8 @@ const handler = async (req, reply) => {
     });
     return;
   }
+
+  const acceptedTimeslot = acceptedTimeslotArr[0];
 
   if (String(acceptedTimeslot.proposerId) === authPayload._id) {
     reply.status(400).send({
@@ -95,7 +97,9 @@ const handler = async (req, reply) => {
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
   try {
-    captains = await getCaptainIds(teamIdArray);
+    captains = await getCaptainIds('/team/get-captains', {
+      teamIdArray,
+    });
   } catch (error) {
     log.error('Error fetching captains! ', error);
     reply.status(500).send({
@@ -109,7 +113,7 @@ const handler = async (req, reply) => {
     reply.status(401).send({
       status: 'ERROR',
       error: 'Unauthorized',
-      message: 'Only captains can accept timeslots!',
+      message: 'Only team captains can accept timeslots!',
     });
     return;
   }
