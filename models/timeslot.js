@@ -15,6 +15,8 @@ const schema = new Schema({
     type: Date,
     required: true,
   },
+}, {
+  timestamps: true,
 });
 
 module.exports = mongoose.model('timeslots', schema);
