@@ -7,6 +7,7 @@ const schema = {
   tags: ['Match'],
   body: {
     type: 'object',
+    required: ['teamOne', 'teamTwo', 'game', 'bestOf'],
     properties: {
       challongeMatchId: {
         type: 'string',
@@ -16,8 +17,9 @@ const schema = {
       },
       teamOne: {
         type: 'object',
+        required: ['coreId', 'name'],
         properties: {
-          id: {
+          coreId: {
             type: 'string',
           },
           name: {
@@ -27,8 +29,9 @@ const schema = {
       },
       teamTwo: {
         type: 'object',
+        required: ['coreId', 'name'],
         properties: {
-          id: {
+          coreId: {
             type: 'string',
           },
           name: {
@@ -61,27 +64,14 @@ const schema = {
 };
 
 const handler = async (req, reply) => {
-  let authPayload;
+  const authPayload = req.auth.jwtPayload;
 
-  // // Check auth headers
-  // if (req.headers.authorization) {
-  //   try {
-  //     authPayload = await JWT.verify(req.headers.authorization);
-  //   } catch (error) {
-  //     reply.status(401).send({
-  //       status: 'ERROR',
-  //       error: 'Unauthorized',
-  //       message: 'Please authenticate',
-  //     });
-  //     return;
-  //   }
-  // }
-
-  if (!authPayload.roles.includes('admin')) {
+  if (!authPayload.roles.includes('admin')
+  && !authPayload.roles.includes('moderator')) {
     reply.status(403).send({
       status: 'ERROR',
       error: 'Forbidden',
-      message: 'Only admins are allowed to create match! ',
+      message: 'Only admins and moderators are allowed to create matches! ',
     });
     return;
   }
