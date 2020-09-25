@@ -32,7 +32,6 @@ const handler = async (req, reply) => {
     });
     return;
   }
-
   const { accessToken = {}, refreshToken = {} } = req.auth;
   reply.send({
     status: 'OK',
