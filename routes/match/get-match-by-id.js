@@ -35,9 +35,9 @@ const handler = async (req, reply) => {
     searchConditions.matchDateLocked = matchDateLocked;
   }
 
-  let matches;
+  let match;
   try {
-    matches = await Match.find(searchConditions, {
+    match = await Match.findOne(searchConditions, {
       __v: 0,
       matchDateLocked: 0,
       createdAt: 0,
@@ -60,7 +60,7 @@ const handler = async (req, reply) => {
     status: 'OK',
     accessToken,
     refreshToken,
-    matches,
+    match,
   });
 };
 
