@@ -21,6 +21,9 @@ const schema = new Schema({
       type: String,
       required: true,
     },
+    challongeId: {
+      type: String,
+    },
   },
   teamTwo: {
     coreId: {
@@ -30,6 +33,9 @@ const schema = new Schema({
     name: {
       type: String,
       required: true,
+    },
+    challongeId: {
+      type: String,
     },
   },
   game: {
