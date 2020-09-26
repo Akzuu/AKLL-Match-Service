@@ -41,6 +41,7 @@ const schema = new Schema({
   game: {
     type: String,
     required: true,
+    enum: ['csgo', 'lol'],
   },
   bestOf: {
     type: Number,

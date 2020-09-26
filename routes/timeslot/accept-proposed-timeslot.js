@@ -1,12 +1,21 @@
 const bent = require('bent');
 const config = require('config');
 const { log } = require('../../lib');
-const { Match } = require('../../models');
+const { Match, CsgoServer } = require('../../models');
 
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
+const AKL_CONFIG_SERVICE = config.get('aklConfigServiceUrl');
+const SPECTATORS = config.get('csgo.spectators');
+const MAP_POOL = config.get('csgo.mapPool');
 
 const getCaptainIds = bent(`${AKLL_BACKEND_URL}`,
   'POST', 'json', 200);
+
+const getTeam = bent(`${AKLL_BACKEND_URL}`,
+  'GET', 'json', 200);
+
+const postMatchConfig = bent(`${AKL_CONFIG_SERVICE}`,
+  'POST', 'json', 200, 201);
 
 const schema = {
   description: 'Accept proposed timeslot.',
@@ -85,14 +94,14 @@ const handler = async (req, reply) => {
 
   const acceptedTimeslot = acceptedTimeslotArr[0];
 
-  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-    reply.status(400).send({
-      status: 'ERROR',
-      error: 'Bad Request',
-      message: 'You can not accept timeslot proposed by yourself!',
-    });
-    return;
-  }
+  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+  //   reply.status(400).send({
+  //     status: 'ERROR',
+  //     error: 'Bad Request',
+  //     message: 'You can not accept timeslot proposed by yourself!',
+  //   });
+  //   return;
+  // }
 
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
@@ -118,12 +127,61 @@ const handler = async (req, reply) => {
     return;
   }
 
+  // If CSGO, make sure there is room for the match
+  const emptyServers = [];
+  if (match.game === 'csgo') {
+    let servers;
+    try {
+      servers = await CsgoServer.find().populate({
+        path: 'lockedTimeslots',
+        match: {
+          endTime: { $gt: acceptedTimeslot.startTime },
+          startTime: { $lt: acceptedTimeslot.endTime },
+        },
+      });
+    } catch (error) {
+      log.error('Error when trying to find csgo servers! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+      });
+      return;
+    }
+
+    if (!servers || servers.length < 1) {
+      reply.status(404).send({
+        status: 'ERROR',
+        error: 'Not Found',
+        message: 'CS:GO Servers not found! Contact admin!',
+      });
+      return;
+    }
+
+    servers.forEach((server) => {
+      if (!server.lockedTimeSlots || server.lockedTimeSlots.length < 1) {
+        emptyServers.push(server);
+      }
+    });
+  }
+
+  if (emptyServers.length < 1) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'No empty servers found for this timeslot! Choose another one!',
+    });
+    return;
+  }
+
+  const emptyServer = emptyServers[0];
+
   try {
     await Match.findByIdAndUpdate(matchId, {
       $set: {
         acceptedTimeslot: acceptedTimeslotId,
         proposedTimeslots: [],
         matchDateLocked: true,
+        'csgo.server': emptyServer._id,
       },
     });
   } catch (error) {
@@ -132,6 +190,96 @@ const handler = async (req, reply) => {
       status: 'ERROR',
       error: 'Internal Server Error',
     });
+    return;
+  }
+
+  if (match.game === 'csgo') {
+    try {
+      await CsgoServer.findByIdAndUpdate(emptyServer._id, {
+        $push: { lockedTimeSlots: acceptedTimeslotId },
+      });
+    } catch (error) {
+      log.error('Error when trying to update CS:GO server! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+      });
+      return;
+    }
+    let teamOne;
+    let teamTwo;
+    try {
+      teamOne = await getTeam(`/team/${match.teamOne.coreId}/info`);
+      teamTwo = await getTeam(`/team/${match.teamTwo.coreId}/info`);
+    } catch (error) {
+      log.error('Error when trying to find teams! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+        message: 'Contact admin with error code: 1001',
+      });
+      return;
+    }
+
+    // TODO: Create function to do this to avoid repetation
+    const teamOnePlayers = [];
+    teamOne.players.forEach((player) => {
+      const playerPayload = {
+        steamId64: player.steam.steamID64,
+        forcedName: player.name,
+      };
+
+      teamOnePlayers.push(playerPayload);
+    });
+
+    const teamTwoPlayers = [];
+    teamTwo.players.forEach((player) => {
+      const playerPayload = {
+        steamId64: player.steam.steamID64,
+        forcedName: player.name,
+      };
+
+      teamTwoPlayers.push(playerPayload);
+    });
+
+    const configPayload = {
+      matchId: match.challongeMatchId,
+      server: emptyServer.name,
+      matchDate: {
+        startTime: acceptedTimeslot.startTime,
+        endTime: acceptedTimeslot.endTime,
+      },
+      bo: match.bestOf,
+      spectators: SPECTATORS,
+      vetoStarter: 'team1',
+      sideChoosingMethod: 'standard',
+      mapPool: MAP_POOL,
+      playersPerTeam: 5,
+      teamOne: {
+        name: teamOne.teamName,
+        tag: teamOne.abbreviation,
+        players: teamOnePlayers,
+      },
+      teamTwo: {
+        name: teamOne.teamName,
+        tag: teamOne.abbreviation,
+        players: teamOnePlayers,
+      },
+    };
+
+    try {
+      await postMatchConfig('/service/config', configPayload);
+    } catch (error) {
+      log.error('Error when trying to post match config to server! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+        message: 'Contact admin with error code: 1002',
+      });
+      return;
+    }
+  } else if (match.game === 'lol') {
+    // console.log('lol');
   }
 
   const { accessToken = {}, refreshToken = {} } = req.auth;

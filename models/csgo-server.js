@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const { Schema } = mongoose;
+const { ObjectId } = Schema.Types;
 
 const schema = new Schema({
   name: {
@@ -22,6 +23,10 @@ const schema = new Schema({
     type: String,
     enum: ['all', 'pro', 'division'],
     default: 'all',
+  },
+  lockedTimeslots: {
+    type: ObjectId,
+    ref: 'timeslots',
   },
 }, {
   timestamps: true,

@@ -43,6 +43,8 @@ const handler = async (req, reply) => {
       createdAt: 0,
       updatedAt: 0,
     })
+      .populate('csgo.server')
+      .populate('proposedTimeslots')
       .populate('acceptedTimeslot');
   } catch (error) {
     log.error('Error finding matches! ', error);

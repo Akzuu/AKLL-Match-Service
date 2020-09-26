@@ -19,4 +19,8 @@ module.exports = {
     logger: false,
     ignoreTrailingSlash: true,
   },
+  csgo: {
+    mapPool: ['de_inferno', 'de_train', 'de_mirage',
+      'de_nuke', 'de_overpass', 'de_dust2', 'de_vertigo'],
+  },
 };

@@ -45,6 +45,9 @@ const initSwagger = () => {
         name: 'Timeslot',
         description: 'Manage match timeslots',
       }, {
+        name: 'Server',
+        description: 'Server endpoints',
+      }, {
         name: 'Utility',
         description: 'Utility endpoints',
       },
@@ -70,6 +73,12 @@ const timeslotRoute = async (server) => {
 const utilityRoute = async (server) => {
   Object.keys(routes.utility).forEach((key) => {
     routes.utility[key](server);
+  });
+};
+
+const serverRoute = async (server) => {
+  Object.keys(routes.server).forEach((key) => {
+    routes.server[key](server);
   });
 };
 
@@ -105,7 +114,8 @@ const initServer = async () => {
     .register(fastifyAuth)
     .register(timeslotRoute, { prefix: `${ROUTE_PREFIX}/timeslot` })
     .register(matchRoute, { prefix: `${ROUTE_PREFIX}/match` })
-    .register(utilityRoute, { prefix: `${ROUTE_PREFIX}/utility` });
+    .register(utilityRoute, { prefix: `${ROUTE_PREFIX}/utility` })
+    .register(serverRoute, { prefix: `${ROUTE_PREFIX}/server` });
 
   return {
     start: async () => {
