@@ -222,8 +222,9 @@ const handler = async (req, reply) => {
     }
 
     // TODO: Create function to do this to avoid repetation
+
     const teamOnePlayers = [];
-    teamOne.players.forEach((player) => {
+    teamOne.members.forEach((player) => {
       const playerPayload = {
         steamId64: player.steam.steamID64,
         forcedName: player.name,
@@ -233,7 +234,7 @@ const handler = async (req, reply) => {
     });
 
     const teamTwoPlayers = [];
-    teamTwo.players.forEach((player) => {
+    teamTwo.members.forEach((player) => {
       const playerPayload = {
         steamId64: player.steam.steamID64,
         forcedName: player.name,
