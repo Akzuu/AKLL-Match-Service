@@ -26,12 +26,18 @@ const schema = {
 const handler = async (req, reply) => {
   const { teamCoreId } = req.params;
   const { matchDateLocked } = req.query;
+
+  const searchConditions = {
+    $or: [{ 'teamOne.coreId': teamCoreId }, { 'teamTwo.coreId': teamCoreId }],
+  };
+
+  if (typeof matchDateLocked === 'boolean') {
+    searchConditions.matchDateLocked = matchDateLocked;
+  }
+
   let matches;
   try {
-    matches = await Match.find({
-      $or: [{ 'teamOne.coreId': teamCoreId }, { 'teamTwo.coreId': teamCoreId }],
-      matchDateLocked: matchDateLocked || /.*/g,
-    }, {
+    matches = await Match.find(searchConditions, {
       __v: 0,
       matchDateLocked: 0,
       createdAt: 0,
