@@ -94,14 +94,14 @@ const handler = async (req, reply) => {
 
   const acceptedTimeslot = acceptedTimeslotArr[0];
 
-  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-  //   reply.status(400).send({
-  //     status: 'ERROR',
-  //     error: 'Bad Request',
-  //     message: 'You can not accept timeslot proposed by yourself!',
-  //   });
-  //   return;
-  // }
+  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'You can not accept timeslot proposed by yourself!',
+    });
+    return;
+  }
 
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
