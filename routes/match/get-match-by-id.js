@@ -67,7 +67,7 @@ const handler = async (req, reply) => {
 module.exports = async function (fastify) {
   fastify.route({
     method: 'GET',
-    url: '/match/:matchId/info',
+    url: '/:matchId/info',
     handler,
     preValidation: fastify.auth([fastify.verifyJWT]),
     schema,
