@@ -4,6 +4,7 @@ const fastify = require('fastify');
 const fastifySwagger = require('fastify-swagger');
 const fastifyHelmet = require('fastify-helmet');
 const fastifyAuth = require('fastify-auth');
+const fastifyCors = require('fastify-cors');
 const routes = require('./routes');
 
 const { auth } = require('./lib');
@@ -109,6 +110,11 @@ const initServer = async () => {
           imgSrc: ['\'self\'', 'data:', 'validator.swagger.io'],
           scriptSrc: ['\'self\'', 'https: \'unsafe-inline\''],
         },
+      },
+    })
+    .register(fastifyCors, {
+      origin: (origin, cb) => {
+        cb(null, true);
       },
     })
     .register(fastifyAuth)

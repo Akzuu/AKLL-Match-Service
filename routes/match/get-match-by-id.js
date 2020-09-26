@@ -2,27 +2,49 @@ const { log } = require('../../lib');
 const { Match } = require('../../models');
 
 const schema = {
-  description: 'Get confirmed matches',
-  summary: 'Get confirmed matches',
+  description: 'Get all matches for a team',
+  summary: 'Get matches for a team',
   tags: ['Match'],
+  params: {
+    type: 'object',
+    properties: {
+      matchId: {
+        type: 'string',
+      },
+    },
+  },
+  query: {
+    type: 'object',
+    properties: {
+      matchDateLocked: {
+        type: 'boolean',
+      },
+    },
+  },
 };
 
 const handler = async (req, reply) => {
+  const { matchId } = req.params;
+  const { matchDateLocked } = req.query;
+
+  const searchConditions = {
+    _id: matchId,
+  };
+
+  if (typeof matchDateLocked === 'boolean') {
+    searchConditions.matchDateLocked = matchDateLocked;
+  }
+
   let matches;
   try {
-    matches = await Match.find({
-      matchDateLocked: true,
-    }, {
-      csgo: 0,
-      lol: 0,
-      challongeMatchId: 0,
-      challongeRound: 0,
+    matches = await Match.find(searchConditions, {
       __v: 0,
-      proposedTimeslots: 0,
       matchDateLocked: 0,
       createdAt: 0,
       updatedAt: 0,
     })
+      .populate('csgo.server')
+      .populate('proposedTimeslots')
       .populate('acceptedTimeslot');
   } catch (error) {
     log.error('Error finding matches! ', error);
@@ -32,6 +54,7 @@ const handler = async (req, reply) => {
     });
     return;
   }
+
   const { accessToken = undefined, refreshToken = undefined } = req.auth;
   reply.send({
     status: 'OK',
@@ -44,7 +67,7 @@ const handler = async (req, reply) => {
 module.exports = async function (fastify) {
   fastify.route({
     method: 'GET',
-    url: '/confirmed',
+    url: '/match/:matchId/info',
     handler,
     preValidation: fastify.auth([fastify.verifyJWT]),
     schema,

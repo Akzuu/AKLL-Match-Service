@@ -55,7 +55,7 @@ const handler = async (req, reply) => {
     return;
   }
 
-  const { accessToken = {}, refreshToken = {} } = req.auth;
+  const { accessToken = undefined, refreshToken = undefined } = req.auth;
   reply.send({
     status: 'OK',
     accessToken,

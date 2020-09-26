@@ -227,7 +227,7 @@ const handler = async (req, reply) => {
     teamOne.members.forEach((player) => {
       const playerPayload = {
         steamId64: player.steam.steamID64,
-        forcedName: player.name,
+        forcedName: player.username,
       };
 
       teamOnePlayers.push(playerPayload);
@@ -237,7 +237,7 @@ const handler = async (req, reply) => {
     teamTwo.members.forEach((player) => {
       const playerPayload = {
         steamId64: player.steam.steamID64,
-        forcedName: player.name,
+        forcedName: player.username,
       };
 
       teamTwoPlayers.push(playerPayload);
@@ -262,9 +262,9 @@ const handler = async (req, reply) => {
         players: teamOnePlayers,
       },
       teamTwo: {
-        name: teamOne.teamName,
-        tag: teamOne.abbreviation,
-        players: teamOnePlayers,
+        name: teamTwo.teamName,
+        tag: teamTwo.abbreviation,
+        players: teamTwoPlayers,
       },
     };
 
@@ -283,7 +283,7 @@ const handler = async (req, reply) => {
     // console.log('lol');
   }
 
-  const { accessToken = {}, refreshToken = {} } = req.auth;
+  const { accessToken = undefined, refreshToken = undefined } = req.auth;
   reply.send({
     status: 'OK',
     accessToken,
