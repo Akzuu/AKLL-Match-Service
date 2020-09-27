@@ -32,11 +32,9 @@ const handler = async (req, reply) => {
     });
     return;
   }
-  const { accessToken = undefined, refreshToken = undefined } = req.auth;
+
   reply.send({
     status: 'OK',
-    accessToken,
-    refreshToken,
     matches,
   });
 };
@@ -46,7 +44,6 @@ module.exports = async function (fastify) {
     method: 'GET',
     url: '/confirmed',
     handler,
-    preValidation: fastify.auth([fastify.verifyJWT]),
     schema,
   });
 };
