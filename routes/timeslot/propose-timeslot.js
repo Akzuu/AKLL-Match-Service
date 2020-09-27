@@ -6,6 +6,7 @@ const { Match, Timeslot } = require('../../models');
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
 
 const getCaptainIds = bent(`${AKLL_BACKEND_URL}`, 'POST', 'json', 200);
+const getTeam = bent(`${AKLL_BACKEND_URL}`, 'GET', 'json', 200);
 
 const schema = {
   description: 'Propose a timeslot for match.',
@@ -89,8 +90,37 @@ const handler = async (req, reply) => {
     return;
   }
 
+  let team;
+  try {
+    team = await getTeam(`/team/${match.teamOne.coreId}/info`);
+  } catch (error) {
+    log.error('Error fetching team! ', error);
+    reply.status(500).send({
+      status: 'ERROR',
+      error: 'Internal Server Error',
+    });
+    return;
+  }
+
+  if (!team) {
+    log.error('Team not found! Id: ', match.teamOne.coreId);
+    reply.status(500).send({
+      status: 'ERROR',
+      error: 'Internal Server Error',
+    });
+    return;
+  }
+
+  let proposerTeamId;
+  if (String(team.captain._id) === String(authPayload._id)) {
+    proposerTeamId = match.teamOne.coreId;
+  } else {
+    proposerTeamId = match.teamTwo.coreId;
+  }
+
   const payload = {
     proposerId: authPayload._id,
+    proposerTeamId,
     startTime: proposedTimeslot.startTime,
     endTime: proposedTimeslot.endTime,
   };

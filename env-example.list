@@ -1,9 +1,8 @@
 NODE_ENV=
 
 # Application envs
-HOST=
-AKLL_BACKEND_URL=
-AKLL_CHALLONGE_SERVICE_URL=
-AKL_CONFIG_SERVICE_URL=
-MONGODB_URI=
+AKLL_BACKEND_URL=http://backend:3000/aklapi
+AKLL_CHALLONGE_SERVICE_URL=http://challonge:3002/akll-challonge
+AKL_CONFIG_SERVICE_URL=http://config:3005/akl-config/
+MONGODB_URI=mongodb://database:27017/akll-match
 SPECTATORS_ARRAY=[]

@@ -7,6 +7,9 @@ const schema = new Schema({
   proposerId: {
     type: ObjectId,
   },
+  proposerTeamId: {
+    type: ObjectId,
+  },
   startTime: {
     type: Date,
     required: true,
