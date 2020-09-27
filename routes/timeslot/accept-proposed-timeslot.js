@@ -175,24 +175,6 @@ const handler = async (req, reply) => {
 
   const emptyServer = emptyServers[0];
 
-  try {
-    await Match.findByIdAndUpdate(matchId, {
-      $set: {
-        acceptedTimeslot: acceptedTimeslotId,
-        proposedTimeslots: [],
-        matchDateLocked: true,
-        'csgo.server': emptyServer._id,
-      },
-    });
-  } catch (error) {
-    log.error('Error when trying to update match! ', error);
-    reply.status(500).send({
-      status: 'ERROR',
-      error: 'Internal Server Error',
-    });
-    return;
-  }
-
   if (match.game === 'csgo') {
     try {
       await CsgoServer.findByIdAndUpdate(emptyServer._id, {
@@ -281,6 +263,24 @@ const handler = async (req, reply) => {
     }
   } else if (match.game === 'lol') {
     // console.log('lol');
+  }
+
+  try {
+    await Match.findByIdAndUpdate(matchId, {
+      $set: {
+        acceptedTimeslot: acceptedTimeslotId,
+        proposedTimeslots: [],
+        matchDateLocked: true,
+        'csgo.server': emptyServer._id,
+      },
+    });
+  } catch (error) {
+    log.error('Error when trying to update match! ', error);
+    reply.status(500).send({
+      status: 'ERROR',
+      error: 'Internal Server Error',
+    });
+    return;
   }
 
   const { accessToken = undefined, refreshToken = undefined } = req.auth;
