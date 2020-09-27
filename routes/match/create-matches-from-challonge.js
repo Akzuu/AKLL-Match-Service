@@ -58,12 +58,14 @@ const handler = async (req, reply) => {
     return;
   }
 
+  log.info(res);
   if (!res || !res.matches || res.matches.length < 1) {
     reply.status(404).send({
       status: 'ERROR',
       error: 'Not Found',
       message: 'No matches found for this tournament. Has tournament started?',
     });
+    return;
   }
 
   const bulkWritePayload = [];
