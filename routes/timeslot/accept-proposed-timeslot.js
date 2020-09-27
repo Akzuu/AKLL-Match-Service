@@ -94,6 +94,9 @@ const handler = async (req, reply) => {
 
   const acceptedTimeslot = acceptedTimeslotArr[0];
 
+  // Add some time so that servers have time to update / backup / whatever
+  acceptedTimeslot.endTime = new Date(acceptedTimeslot.endTime.getHours() + 1);
+
   if (String(acceptedTimeslot.proposerId) === authPayload._id) {
     reply.status(400).send({
       status: 'ERROR',
