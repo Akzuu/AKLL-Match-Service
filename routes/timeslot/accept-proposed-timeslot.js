@@ -1,5 +1,6 @@
 const bent = require('bent');
 const config = require('config');
+const moment = require('moment');
 const { log } = require('../../lib');
 const { Match, CsgoServer } = require('../../models');
 
@@ -49,13 +50,6 @@ const handler = async (req, reply) => {
   const { matchId, acceptedTimeslotId } = req.body;
   const authPayload = req.auth.jwtPayload;
 
-  reply.status(500).send({
-    status: 'ERROR',
-    error: 'Internal Server Error',
-    message: 'ENDPOINT NOT ACTIVE YET PLEASE WAIT',
-  });
-  return;
-
   let match;
   try {
     match = await Match.findById(matchId)
@@ -104,51 +98,45 @@ const handler = async (req, reply) => {
   // Add some time so that servers have time to update / backup / whatever
   acceptedTimeslot.endTime.setHours(acceptedTimeslot.endTime.getHours() + 1);
 
-  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-  //   reply.status(400).send({
-  //     status: 'ERROR',
-  //     error: 'Bad Request',
-  //     message: 'You can not accept timeslot proposed by yourself!',
-  //   });
-  //   return;
-  // }
+  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'You can not accept timeslot proposed by yourself!',
+    });
+    return;
+  }
 
-  // const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
-  // let captains;
-  // try {
-  //   captains = await getCaptainIds('/team/get-captains', {
-  //     teamIdArray,
-  //   });
-  // } catch (error) {
-  //   log.error('Error fetching captains! ', error);
-  //   reply.status(500).send({
-  //     status: 'ERROR',
-  //     error: 'Internal Server Error',
-  //   });
-  //   return;
-  // }
+  const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
+  let captains;
+  try {
+    captains = await getCaptainIds('/team/get-captains', {
+      teamIdArray,
+    });
+  } catch (error) {
+    log.error('Error fetching captains! ', error);
+    reply.status(500).send({
+      status: 'ERROR',
+      error: 'Internal Server Error',
+    });
+    return;
+  }
 
-  // if (!captains.includes(authPayload._id)) {
-  //   reply.status(401).send({
-  //     status: 'ERROR',
-  //     error: 'Unauthorized',
-  //     message: 'Only team captains can accept timeslots!',
-  //   });
-  //   return;
-  // }
+  if (!captains.includes(authPayload._id)) {
+    reply.status(401).send({
+      status: 'ERROR',
+      error: 'Unauthorized',
+      message: 'Only team captains can accept timeslots!',
+    });
+    return;
+  }
 
   // If CSGO, make sure there is room for the match
   const emptyServers = [];
   if (match.game === 'csgo') {
     let servers;
     try {
-      servers = await CsgoServer.find().populate({
-        path: 'lockedTimeslots',
-        match: {
-          endTime: { $gt: acceptedTimeslot.startTime },
-          startTime: { $lt: acceptedTimeslot.endTime },
-        },
-      });
+      servers = await CsgoServer.find().populate('lockedTimeslots');
     } catch (error) {
       log.error('Error when trying to find csgo servers! ', error);
       reply.status(500).send({
@@ -167,37 +155,48 @@ const handler = async (req, reply) => {
       return;
     }
 
+    const momentedAcceptedTimeslot = {
+      startTime: moment(acceptedTimeslot.startTime),
+      endTime: moment(acceptedTimeslot.endTime),
+    };
+
+    // Refactor this shit
     servers.forEach((server) => {
-      if (!server.lockedTimeSlots || server.lockedTimeSlots.length < 1) {
+      if (!server.lockedTimeslots || server.lockedTimeslots.length < 1) {
         emptyServers.push(server);
+      } else if (server.lockedTimeslots.length > 0) {
+        const conflict = server.lockedTimeslots.find((slot) => {
+          const momentedTimeslot = {
+            startTime: moment(slot.startTime),
+            endTime: moment(slot.endTime),
+          };
+
+          if (momentedTimeslot.startTime
+            .isBetween(momentedAcceptedTimeslot.startTime, momentedAcceptedTimeslot.endTime)
+            || momentedTimeslot.endTime
+              .isBetween(momentedAcceptedTimeslot.startTime, momentedAcceptedTimeslot.endTime)) {
+            return slot;
+          }
+          return undefined;
+        });
+
+        if (!conflict) {
+          emptyServers.push(server);
+        }
       }
     });
-  }
 
-  if (emptyServers.length < 1) {
-    reply.status(400).send({
-      status: 'ERROR',
-      error: 'Bad Request',
-      message: 'No empty servers found for this timeslot! Choose another one!',
-    });
-    return;
-  }
-
-  const emptyServer = emptyServers[0];
-
-  if (match.game === 'csgo') {
-    try {
-      await CsgoServer.findByIdAndUpdate(emptyServer._id, {
-        $push: { lockedTimeSlots: acceptedTimeslotId },
-      });
-    } catch (error) {
-      log.error('Error when trying to update CS:GO server! ', error);
-      reply.status(500).send({
+    if (emptyServers.length < 1) {
+      reply.status(400).send({
         status: 'ERROR',
-        error: 'Internal Server Error',
+        error: 'Bad Request',
+        message: 'No empty servers found for this timeslot! Choose another one!',
       });
       return;
     }
+
+    const emptyServer = emptyServers[0];
+
     let teamOne;
     let teamTwo;
     try {
@@ -271,28 +270,38 @@ const handler = async (req, reply) => {
       });
       return;
     }
-  } else if (match.game === 'lol') {
-    // console.log('lol');
-  }
 
-  try {
-    await Match.findByIdAndUpdate(matchId, {
-      $set: {
-        acceptedTimeslot: acceptedTimeslotId,
-        proposedTimeslots: [],
-        matchDateLocked: true,
-        'csgo.server': emptyServer._id,
-      },
-    });
-  } catch (error) {
-    log.error('Error when trying to update match! ', error);
-    reply.status(500).send({
-      status: 'ERROR',
-      error: 'Internal Server Error',
-    });
-    return;
-  }
+    try {
+      await CsgoServer.findByIdAndUpdate(emptyServer._id, {
+        $push: { lockedTimeslots: acceptedTimeslotId },
+      });
+    } catch (error) {
+      log.error('Error when trying to update CS:GO server! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+      });
+      return;
+    }
 
+    try {
+      await Match.findByIdAndUpdate(matchId, {
+        $set: {
+          acceptedTimeslot: acceptedTimeslotId,
+          proposedTimeslots: [],
+          matchDateLocked: true,
+          'csgo.server': emptyServer._id,
+        },
+      });
+    } catch (error) {
+      log.error('Error when trying to update match! ', error);
+      reply.status(500).send({
+        status: 'ERROR',
+        error: 'Internal Server Error',
+      });
+      return;
+    }
+  }
   const { accessToken = undefined, refreshToken = undefined } = req.auth;
   reply.send({
     status: 'OK',

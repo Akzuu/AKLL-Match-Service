@@ -24,10 +24,10 @@ const schema = new Schema({
     enum: ['all', 'pro', 'division'],
     default: 'all',
   },
-  lockedTimeslots: {
+  lockedTimeslots: [{
     type: ObjectId,
     ref: 'timeslots',
-  },
+  }],
 }, {
   timestamps: true,
 });
