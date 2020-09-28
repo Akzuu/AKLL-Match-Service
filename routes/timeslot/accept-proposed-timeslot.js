@@ -263,6 +263,7 @@ const handler = async (req, reply) => {
       await postMatchConfig('/service/config', configPayload);
     } catch (error) {
       log.error('Error when trying to post match config to server! ', error);
+      log.error('Config payload: ', configPayload);
       reply.status(500).send({
         status: 'ERROR',
         error: 'Internal Server Error',
