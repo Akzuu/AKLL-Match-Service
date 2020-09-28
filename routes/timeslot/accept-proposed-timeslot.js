@@ -6,7 +6,7 @@ const { Match, CsgoServer } = require('../../models');
 
 const AKLL_BACKEND_URL = config.get('akllBackendUrl');
 const AKL_CONFIG_SERVICE = config.get('aklConfigServiceUrl');
-const SPECTATORS = config.get('csgo.spectators');
+// const SPECTATORS = config.get('csgo.spectators');
 const MAP_POOL = config.get('csgo.mapPool');
 
 const getCaptainIds = bent(`${AKLL_BACKEND_URL}`,
@@ -242,7 +242,7 @@ const handler = async (req, reply) => {
         endTime: acceptedTimeslot.endTime,
       },
       bo: match.bestOf,
-      spectators: SPECTATORS,
+      spectators: [],
       vetoStarter: 'team1',
       sideChoosingMethod: 'standard',
       mapPool: MAP_POOL,
@@ -264,6 +264,7 @@ const handler = async (req, reply) => {
     } catch (error) {
       log.error('Error when trying to post match config to server! ', error);
       log.error('Config payload: ', configPayload);
+      log.error('Tried to post to: ', AKL_CONFIG_SERVICE);
       reply.status(500).send({
         status: 'ERROR',
         error: 'Internal Server Error',
