@@ -49,6 +49,13 @@ const handler = async (req, reply) => {
   const { matchId, acceptedTimeslotId } = req.body;
   const authPayload = req.auth.jwtPayload;
 
+  reply.status(500).send({
+    status: 'ERROR',
+    error: 'Internal Server Error',
+    message: 'ENDPOINT NOT ACTIVE YET PLEASE WAIT',
+  });
+  return;
+
   let match;
   try {
     match = await Match.findById(matchId)
@@ -97,38 +104,38 @@ const handler = async (req, reply) => {
   // Add some time so that servers have time to update / backup / whatever
   acceptedTimeslot.endTime.setHours(acceptedTimeslot.endTime.getHours() + 1);
 
-  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-    reply.status(400).send({
-      status: 'ERROR',
-      error: 'Bad Request',
-      message: 'You can not accept timeslot proposed by yourself!',
-    });
-    return;
-  }
+  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+  //   reply.status(400).send({
+  //     status: 'ERROR',
+  //     error: 'Bad Request',
+  //     message: 'You can not accept timeslot proposed by yourself!',
+  //   });
+  //   return;
+  // }
 
-  const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
-  let captains;
-  try {
-    captains = await getCaptainIds('/team/get-captains', {
-      teamIdArray,
-    });
-  } catch (error) {
-    log.error('Error fetching captains! ', error);
-    reply.status(500).send({
-      status: 'ERROR',
-      error: 'Internal Server Error',
-    });
-    return;
-  }
+  // const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
+  // let captains;
+  // try {
+  //   captains = await getCaptainIds('/team/get-captains', {
+  //     teamIdArray,
+  //   });
+  // } catch (error) {
+  //   log.error('Error fetching captains! ', error);
+  //   reply.status(500).send({
+  //     status: 'ERROR',
+  //     error: 'Internal Server Error',
+  //   });
+  //   return;
+  // }
 
-  if (!captains.includes(authPayload._id)) {
-    reply.status(401).send({
-      status: 'ERROR',
-      error: 'Unauthorized',
-      message: 'Only team captains can accept timeslots!',
-    });
-    return;
-  }
+  // if (!captains.includes(authPayload._id)) {
+  //   reply.status(401).send({
+  //     status: 'ERROR',
+  //     error: 'Unauthorized',
+  //     message: 'Only team captains can accept timeslots!',
+  //   });
+  //   return;
+  // }
 
   // If CSGO, make sure there is room for the match
   const emptyServers = [];
