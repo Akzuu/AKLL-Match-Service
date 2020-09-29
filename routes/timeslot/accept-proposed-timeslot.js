@@ -95,9 +95,6 @@ const handler = async (req, reply) => {
 
   const acceptedTimeslot = acceptedTimeslotArr[0];
 
-  // Add some time so that servers have time to update / backup / whatever
-  acceptedTimeslot.endTime.setHours(acceptedTimeslot.endTime.getHours() + 1);
-
   if (String(acceptedTimeslot.proposerId) === authPayload._id) {
     reply.status(400).send({
       status: 'ERROR',
@@ -155,9 +152,10 @@ const handler = async (req, reply) => {
       return;
     }
 
+    // Make sure server isn't occupied for one hour after or before
     const momentedAcceptedTimeslot = {
-      startTime: moment(acceptedTimeslot.startTime),
-      endTime: moment(acceptedTimeslot.endTime),
+      startTime: moment(acceptedTimeslot.startTime).subtract(1, 'hours'),
+      endTime: moment(acceptedTimeslot.endTime).add(1, 'hours'),
     };
 
     // Refactor this shit
@@ -239,7 +237,7 @@ const handler = async (req, reply) => {
       server: emptyServer.name,
       matchDate: {
         startTime: acceptedTimeslot.startTime,
-        endTime: acceptedTimeslot.endTime,
+        endTime: momentedAcceptedTimeslot.endTime,
       },
       bo: match.bestOf,
       spectators: [],
@@ -263,8 +261,8 @@ const handler = async (req, reply) => {
       await postMatchConfig('/service/config', configPayload);
     } catch (error) {
       log.error('Error when trying to post match config to server! ', error);
-      log.error('Config payload: ', configPayload);
-      log.error('Tried to post to: ', AKL_CONFIG_SERVICE);
+      log.error(`Config payload: ${configPayload}`);
+      log.error(`Tried to post to: ${AKL_CONFIG_SERVICE}`);
       reply.status(500).send({
         status: 'ERROR',
         error: 'Internal Server Error',
