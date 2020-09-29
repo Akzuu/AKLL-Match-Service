@@ -154,8 +154,8 @@ const handler = async (req, reply) => {
 
     // Make sure server isn't occupied for one hour after or before
     const momentedAcceptedTimeslot = {
-      startTime: moment(acceptedTimeslot.startTime).subtract(1, 'hours'),
-      endTime: moment(acceptedTimeslot.endTime).add(1, 'hours'),
+      startTime: moment(acceptedTimeslot.startTime).subtract(2, 'hours'),
+      endTime: moment(acceptedTimeslot.endTime).add(2, 'hours'),
     };
 
     // Refactor this shit
@@ -232,12 +232,13 @@ const handler = async (req, reply) => {
       teamTwoPlayers.push(playerPayload);
     });
 
+    const realEndingTime = momentedAcceptedTimeslot.endTime.subtract(1, 'hour');
     const configPayload = {
       matchId: match.challongeMatchId,
       server: emptyServer.name,
       matchDate: {
         startTime: acceptedTimeslot.startTime,
-        endTime: momentedAcceptedTimeslot.endTime,
+        endTime: realEndingTime,
       },
       bo: match.bestOf,
       spectators: [],
