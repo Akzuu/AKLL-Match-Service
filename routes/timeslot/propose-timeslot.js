@@ -1,5 +1,6 @@
 const bent = require('bent');
 const config = require('config');
+const moment = require('moment');
 const { log } = require('../../lib');
 const { Match, Timeslot } = require('../../models');
 
@@ -40,6 +41,15 @@ const schema = {
 const handler = async (req, reply) => {
   const { matchId, proposedTimeslot } = req.body;
   const authPayload = req.auth.jwtPayload;
+
+  if (moment(proposedTimeslot.endTime).diff(moment(proposedTimeslot.startTime), 'hours') < 1) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'Timeslot too short! Timeslot must be at least one hour long!',
+    });
+    return;
+  }
 
   let match;
   try {
