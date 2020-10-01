@@ -93,14 +93,23 @@ const handler = async (req, reply) => {
     return;
   }
 
-  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-  //   reply.status(400).send({
-  //     status: 'ERROR',
-  //     error: 'Bad Request',
-  //     message: 'You can not accept timeslot proposed by yourself!',
-  //   });
-  //   return;
-  // }
+  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'You can not accept timeslot proposed by yourself!',
+    });
+    return;
+  }
+
+  if (moment(acceptedTimeslot.endTime).diff(moment(acceptedTimeslot.startTime), 'hours') < 1) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'Timeslot too short! Timeslot must be at least one hour long!',
+    });
+    return;
+  }
 
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
