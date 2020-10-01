@@ -16,6 +16,16 @@ const schema = new Schema({
     type: Number,
     required: true,
   },
+  gotv: {
+    ip: {
+      type: String,
+      default: null,
+    },
+    port: {
+      type: String,
+      default: null,
+    },
+  },
   password: {
     type: String,
   },

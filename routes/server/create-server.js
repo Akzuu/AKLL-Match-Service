@@ -26,6 +26,17 @@ const schema = {
         enum: ['all', 'pro', 'division'],
         default: 'all',
       },
+      gotv: {
+        type: 'object',
+        properties: {
+          ip: {
+            type: 'string',
+          },
+          port: {
+            type: 'string',
+          },
+        },
+      },
     },
   },
   response: {
@@ -75,7 +86,7 @@ const handler = async (req, reply) => {
 module.exports = async function (fastify) {
   fastify.route({
     method: 'POST',
-    url: '/create-match',
+    url: '/create',
     handler,
     preValidation: fastify.auth([fastify.verifyJWT]),
     schema,

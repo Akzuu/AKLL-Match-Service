@@ -81,10 +81,10 @@ const handler = async (req, reply) => {
     return;
   }
 
-  const acceptedTimeslotArr = match.proposedTimeslots
-    .filter((timeslot) => String(timeslot._id) === acceptedTimeslotId);
+  const acceptedTimeslot = match.proposedTimeslots
+    .find((timeslot) => String(timeslot._id) === acceptedTimeslotId);
 
-  if (!acceptedTimeslotArr || acceptedTimeslotArr.length < 1) {
+  if (!acceptedTimeslot) {
     reply.status(404).send({
       status: 'ERROR',
       error: 'Not Found',
@@ -93,16 +93,14 @@ const handler = async (req, reply) => {
     return;
   }
 
-  const acceptedTimeslot = acceptedTimeslotArr[0];
-
-  if (String(acceptedTimeslot.proposerId) === authPayload._id) {
-    reply.status(400).send({
-      status: 'ERROR',
-      error: 'Bad Request',
-      message: 'You can not accept timeslot proposed by yourself!',
-    });
-    return;
-  }
+  // if (String(acceptedTimeslot.proposerId) === authPayload._id) {
+  //   reply.status(400).send({
+  //     status: 'ERROR',
+  //     error: 'Bad Request',
+  //     message: 'You can not accept timeslot proposed by yourself!',
+  //   });
+  //   return;
+  // }
 
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
@@ -129,8 +127,8 @@ const handler = async (req, reply) => {
   }
 
   // If CSGO, make sure there is room for the match
-  const emptyServers = [];
   if (match.game === 'csgo') {
+    const emptyServers = [];
     let servers;
     try {
       servers = await CsgoServer.find().populate('lockedTimeslots');
@@ -158,7 +156,7 @@ const handler = async (req, reply) => {
       endTime: moment(acceptedTimeslot.endTime).add(2, 'hours'),
     };
 
-    // Refactor this shit
+    // TODO: Refactor this shit
     servers.forEach((server) => {
       if (!server.lockedTimeslots || server.lockedTimeslots.length < 1) {
         emptyServers.push(server);
@@ -172,7 +170,9 @@ const handler = async (req, reply) => {
           if (momentedTimeslot.startTime
             .isBetween(momentedAcceptedTimeslot.startTime, momentedAcceptedTimeslot.endTime)
             || momentedTimeslot.endTime
-              .isBetween(momentedAcceptedTimeslot.startTime, momentedAcceptedTimeslot.endTime)) {
+              .isBetween(momentedAcceptedTimeslot.startTime, momentedAcceptedTimeslot.endTime)
+            || momentedAcceptedTimeslot.startTime
+              .isBetween(momentedTimeslot.startTime, momentedTimeslot.endTime)) {
             return slot;
           }
           return undefined;

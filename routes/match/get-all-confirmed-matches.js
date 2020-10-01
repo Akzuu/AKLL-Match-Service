@@ -13,8 +13,8 @@ const handler = async (req, reply) => {
     matches = await Match.find({
       matchDateLocked: true,
     }, {
-      csgo: 0,
       lol: 0,
+      'csgo.maps': 0,
       challongeMatchId: 0,
       challongeRound: 0,
       __v: 0,
@@ -23,6 +23,10 @@ const handler = async (req, reply) => {
       createdAt: 0,
       updatedAt: 0,
     })
+      .populate({
+        path: 'csgo.server',
+        select: ['name', 'gotv'],
+      })
       .populate('acceptedTimeslot');
   } catch (error) {
     log.error('Error finding matches! ', error);
