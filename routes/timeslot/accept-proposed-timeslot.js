@@ -111,6 +111,15 @@ const handler = async (req, reply) => {
     return;
   }
 
+  if (moment(acceptedTimeslot.endTime).diff(moment(acceptedTimeslot.startTime), 'hours') > 6) {
+    reply.status(400).send({
+      status: 'ERROR',
+      error: 'Bad Request',
+      message: 'Timeslot too long! Timeslot must be shorter than six hours!',
+    });
+    return;
+  }
+
   const teamIdArray = [match.teamOne.coreId, match.teamTwo.coreId];
   let captains;
   try {
