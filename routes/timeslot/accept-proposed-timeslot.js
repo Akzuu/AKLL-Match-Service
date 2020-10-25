@@ -250,7 +250,7 @@ const handler = async (req, reply) => {
       teamTwoPlayers.push(playerPayload);
     });
 
-    const realEndingTime = momentedAcceptedTimeslot.endTime;
+    const realEndingTime = momentedAcceptedTimeslot.endTime.subtract(30, 'minutes');
     const configPayload = {
       matchId: match.challongeMatchId,
       server: emptyServer.name,
