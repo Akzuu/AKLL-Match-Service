@@ -170,8 +170,8 @@ const handler = async (req, reply) => {
 
     // Make sure server isn't occupied for one hour after or before
     const momentedAcceptedTimeslot = {
-      startTime: moment(acceptedTimeslot.startTime).subtract(2, 'hours'),
-      endTime: moment(acceptedTimeslot.endTime).add(2, 'hours'),
+      startTime: moment(acceptedTimeslot.startTime).subtract(1, 'hours'),
+      endTime: moment(acceptedTimeslot.endTime).add(1, 'hours'),
     };
 
     // TODO: Refactor this shit
@@ -250,7 +250,7 @@ const handler = async (req, reply) => {
       teamTwoPlayers.push(playerPayload);
     });
 
-    const realEndingTime = momentedAcceptedTimeslot.endTime.subtract(1, 'hour');
+    const realEndingTime = momentedAcceptedTimeslot.endTime;
     const configPayload = {
       matchId: match.challongeMatchId,
       server: emptyServer.name,
@@ -302,7 +302,7 @@ const handler = async (req, reply) => {
       });
       return;
     }
-
+    
     try {
       await Match.findByIdAndUpdate(matchId, {
         $set: {
