@@ -96,12 +96,15 @@ const handler = async (req, reply) => {
 
   let writeRes;
   try {
-    writeRes = await Match.bulkWrite(bulkWritePayload);
+    writeRes = await Match.bulkWrite(bulkWritePayload, {
+      ordered: false, // Write rest of the inserts even when one document already exists
+    });
   } catch (error) {
     log.error('Error writing matches to db! ', error);
     reply.status(500).send({
       status: 'ERROR',
       error: 'Internal Server Error',
+      message: error,
     });
     return;
   }
